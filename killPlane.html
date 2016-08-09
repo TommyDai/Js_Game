@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>彩京1945</title>
+    <style type="text/css">
+        *{font-family:微软雅黑;}
+        img{position:absolute;}
+        #map{width:600px;height:600px;overflow:hidden;position:relative;border:1px solid black}
+        #tip{width:600px;height:600px;position:absolute;top:8px;left:308px;border:1px solid black;background:rgba(0,0,0,0.8);display:none;}
+        #readme{float:left;height:600px;width:300px;}
+        #go{color:#fff;font-size:50px;margin:270px 120px 100px;}
+
+    </style>
+</head>
+<body bgcolor="#43d512">
+
+    <div id="readme">
+        <h1>打灰机</h1>
+        <p>游戏说明:</p>
+        <p>方向键控制上下左右，空格发射导弹</p>
+        <p>请使用最新版chrome浏览器打开</p>
+    </div>
+    <div id="map">
+        <img src="./images/bg.jpg" height="600px" width="600px">
+        <img id="me" src="./images/me.png">
+    </div>
+    <div id="tip">
+        <h1 id="go">GAME　OVER</h1>
+        　　　　　　　　　　　　　　　<button onclick="location.reload()">　重新开始　</button>
+    </div>
+
+</body>
+</html>
+<script type="text/javascript">
+
+    //获取玩家战斗机
+    var me = document.getElementById('me');
+    var tip = document.getElementById('tip');
+
+    //获取背景地图
+    var map = document.getElementById('map');
+
+    //地图宽高
+    var mapw = map.offsetWidth;
+    var maph = map.offsetHeight;
+
+    //定时器
+    var t = null;
+
+
+    //玩家战机位置初始化
+    me.onload = function()
+    {
+        mew = this.offsetWidth;
+        meh = this.offsetHeight;
+        me.style.left = ((mapw-mew)/2) + 'px';
+        me.style.top  = (maph-meh) + 'px';
+    }
+
+    //玩家飞机移动 上(38)下(40)左(37)右(39)发射(32)
+    window.onkeydown = function(e)
+    {
+        var k = e.keyCode || e.charCode;
+        switch(k){
+            case 38: meUd(-2); break;
+            case 40: meUd(2);  break;
+            case 37: meLr(-2); break;
+            case 39: meLr(2);  break;
+            case 32: meKill(); break;
+        }
+        return false;
+    }
+
+    //飞机上下移
+    function meUd(num)
+    {
+        if(t != null) return;
+        t = setInterval(function(){
+            me.style.top = me.offsetTop+num +'px';
+            if(me.offsetTop<0) me.style.top = 0+'px';
+            if(me.offsetTop>(maph-meh)) me.style.top = (maph-meh)+'px';
+        },1);
+    }
+
+    //飞机左右移
+    function meLr(num)
+    {
+        if(t != null) return;
+        t = setInterval(function(){
+            me.style.left = me.offsetLeft+num +'px';
+            me.style.transform = 'skewY('+(num*2)+'deg)';
+            if(me.offsetLeft<0) me.style.left = 0+'px';
+            if(me.offsetLeft>(mapw-mew)) me.style.left = (mapw-mew)+'px';
+        },1);
+    }
+
+    //发射导弹
+    function meKill()
+    {
+        //创建导弹
+        var dd1 = document.createElement('img');
+        var dd2 = document.createElement('img');
+        dd1.setAttribute('src','./images/b.png');
+        dd2.setAttribute('src','./images/b.png');
+        dd1.setAttribute('class','dd');
+        dd2.setAttribute('class','dd');
+
+        //设置导弹初始位置
+        dd1.style.top  = me.offsetTop-20 +'px';
+        dd2.style.top  = me.offsetTop-20 +'px';
+        dd1.style.left = me.offsetLeft+20 +'px';
+        dd2.style.left = me.offsetLeft+78 +'px';
+        map.appendChild(dd1);
+        map.appendChild(dd2);
+
+        //导弹移动方法
+        var z = setInterval(function(){
+            dd1.style.top = dd1.offsetTop-2 +'px';
+            dd2.style.top = dd2.offsetTop-2 +'px';
+            if(dd1.offsetTop<0 && dd2.offsetTop<0){
+                clearInterval(z);
+                map.removeChild(dd1);
+                map.removeChild(dd2);
+            }else if(dd1.offsetTop<0){
+                clearInterval(z);
+                map.removeChild(dd1);
+            }else if(dd2.offsetTop<0){
+                clearInterval(z);
+                map.removeChild(dd2);
+            }
+
+            //获取敌机
+            var dj = document.getElementsByClassName('dj');
+
+            //获取导弹方位
+            var ddt1 = dd1.offsetTop;
+            var ddb1 = dd1.offsetTop+dd1.offsetHeight;
+            var ddl1 = dd1.offsetLeft;
+            var ddr1 = ddl1+dd1.offsetWidth;
+
+            var ddt2 = dd2.offsetTop;
+            var ddb2 = dd2.offsetTop+dd2.offsetHeight;
+            var ddl2 = dd2.offsetLeft;
+            var ddr2 = ddl2+dd2.offsetWidth;
+
+            //遍历敌机
+            for(var i=0;i<dj.length;i++){
+
+                //获取敌机方位
+                var dju = dj[i].offsetTop-dj[i].offsetHeight;
+                var djb = dj[i].offsetTop+dj[i].offsetHeight;
+                var djl = dj[i].offsetLeft;
+                var djr = dj[i].offsetLeft+dj[i].offsetWidth;
+
+                var zd1 = ddt1<djb && ddl1<djr && ddr1>djl && ddb1>dju;
+                var zd2 = ddt2<djb && ddl2<djr && ddr2>djl && ddb2>dju;
+
+                //左右子弹同时击中敌机
+                if(zd1 && zd2){
+                    map.removeChild(dd1);
+                    boom(dd2);
+                }
+
+                //判断左边子弹是否击中敌机
+                else if(zd1) boom(dd1);
+
+                //判断右边子弹是否击中敌机
+                else if(zd2) boom(dd2);
+
+                //击中后的爆炸效果
+                function boom(obj){
+                    map.removeChild(obj);
+                    var bm = document.createElement('img');
+                    bm.setAttribute('src','./images/boom.gif');
+                    bm.setAttribute('width',dj[i].offsetWidth+'px');
+                    bm.style.left = dj[i].offsetLeft +'px';
+                    bm.style.top = dj[i].offsetTop +'px';
+                    map.replaceChild(bm,dj[i]);
+                    setTimeout(function(){
+                        map.removeChild(bm);
+                    },500);
+                }
+            }
+        },10);
+    }
+
+    //清空定时器
+    window.onkeyup = function()
+    {
+        me.style.transform = 'skewY(0deg)';
+        clearInterval(t);
+        t = null;
+    }
+
+    //创建敌方飞机
+    function createDj()
+    {
+        //创建新元素
+        var diji = document.createElement('img');
+
+        //创建随机样式敌方飞机
+        var rand = Math.ceil(Math.random()*3);
+        diji.setAttribute('src','./images/e'+rand+'.png');
+        diji.setAttribute('class','dj');
+        diji.style.visibility = 'hidden';
+        map.appendChild(diji);
+
+        //设置敌方飞机初始位置
+        diji.onload = function(){
+
+            //获取敌方飞机宽高
+            djw = this.offsetWidth;
+            djh = this.offsetHeight;
+
+            //设置敌方飞机初始位置
+            diji.style.top = djh*-1 +'px';
+            var randl = Math.floor(Math.random()*(mapw-djw));
+            diji.style.left = randl +'px';
+            diji.style.visibility = 'visible';
+        }
+
+        //敌方飞机移动效果
+        var a = 1;
+        var d = setInterval(function(){
+
+            diji.style.top = diji.offsetTop+8 +'px';
+
+            //玩家飞机方位
+            var mel = me.offsetLeft;
+            var mer = me.offsetLeft+me.offsetWidth;
+            var met = me.offsetTop;
+            var meb = me.offsetTop+me.offsetHeight;
+
+            //敌机方位
+            var djl = diji.offsetLeft;
+            var djr = diji.offsetLeft+diji.offsetWidth;
+            var djt = diji.offsetTop;
+            var djb = diji.offsetTop+diji.offsetHeight;
+
+            //判断玩家飞机是否被撞击
+            if((djb>met || djt>meb) && djl<mer && djr>mel){
+                a += 30;
+                me.style.transform = 'rotate('+a+'deg)';
+                setTimeout(function(){
+                    var boom = document.createElement('img');
+                    boom.setAttribute('src','./images/boom.gif');
+                    boom.setAttribute('width',me.offsetWidth+'px');
+                    boom.style.top = me.offsetTop +'px';
+                    boom.style.left = me.offsetLeft +'px';
+                    map.replaceChild(boom,me);
+                setTimeout(function(){
+                    tip.style.display = 'block';
+                },1000);
+                },1000);
+            }
+
+
+            if(diji.offsetTop>maph){
+                clearInterval(d);
+                map.removeChild(diji);
+            }
+        },rand*30);
+    }
+
+    //不断增加敌方飞机
+    setInterval(function(){
+        createDj();
+    },500);
+
+
+
+
+</script>
